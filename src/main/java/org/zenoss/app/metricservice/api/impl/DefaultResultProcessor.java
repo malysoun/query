@@ -95,10 +95,10 @@ public class DefaultResultProcessor implements ResultProcessor,
      * java.io.BufferedReader, java.util.List, long)
      */
     @Override
-    public Buckets<MetricKey, String> processResults(BufferedReader reader, List<MetricSpecification> queries, long bucketSize)
+    public Buckets<MetricKey> processResults(BufferedReader reader, List<MetricSpecification> queries, long bucketSize)
         throws ClassNotFoundException, IOException, UnknownReferenceException {
 
-        Buckets<MetricKey, String> buckets = new Buckets<>(bucketSize);
+        Buckets<MetricKey> buckets = new Buckets<>(bucketSize);
 
         Map<MetricKey, MetricCalculator> calculatorMap = new HashMap<>();
 
@@ -129,13 +129,18 @@ public class DefaultResultProcessor implements ResultProcessor,
         OpenTSDBQueryResult[] queryResult = mapper.readValue(reader, OpenTSDBQueryResult[].class);
         allResults.addAll(Arrays.asList(queryResult));
 
-        Buckets<MetricKey, String>.Bucket previousBucket = null, currentBucket = null;
+        //TODO: once interpolation unit test is working, see if we can refactor to get rid of previous/current values, and just operate on current.
+        Buckets<MetricKey>.Bucket previousBucket = null, currentBucket = null;
         long dataPointTimeStamp = 0, previousTs = 0;
         Tags curTags = null;
+
+        // iterate over results (a result is a data series - with metric name, collection of points, tags, etc.
         for (OpenTSDBQueryResult result : allResults) {
             log.debug("processing result: {}", result.debugString());
             String metricName = result.metric;
             curTags = Tags.fromOpenTsdbTags(result.tags);
+
+            // iterate over data points for the current series
             for (Map.Entry<Long, String> dataPointEntry : result.dps.entrySet()) {
                 previousTs = dataPointTimeStamp;
                 double dataPointValue = Double.valueOf(dataPointEntry.getValue());
@@ -152,19 +157,22 @@ public class DefaultResultProcessor implements ResultProcessor,
                     dataPointValue = calc.evaluate(dataPointValue);
                 }
 
-                buckets.add(key, key.getName(), dataPointTimeStamp, dataPointValue);
+                buckets.add(key, dataPointTimeStamp, dataPointValue);
                 previousBucket = currentBucket;
                 currentBucket = buckets.getBucket(dataPointTimeStamp);
                 if (previousBucket != null && !previousBucket.equals(currentBucket)) {
                     for (MetricSpecification value : calculatedValues) {
-                        calculateValue2(buckets, calculatorMap, keyCache, closure, curTags, previousBucket, previousTs, value);
+                        log.info("calling calculateValue (1). timestamp = {}, NameOrMetric = {}", previousTs, value.getNameOrMetric());
+                        calculateValue(buckets, calculatorMap, keyCache, closure, curTags, previousBucket, previousTs, value);
                     }
                 }
-            }
-        }
-        for (MetricSpecification value : calculatedValues) {
-            calculateValue2(buckets, calculatorMap, keyCache, closure, curTags, previousBucket, previousTs, value);
-        }
+            } // iterate over data points in this series
+        } //iterate over all series in result set
+        //TODO: I don't think this is necessary. Try without and see what happens. If all is okay, remove it.
+//        for (MetricSpecification value : calculatedValues) {
+//            log.info("calling calculateValue (2). timestamp = {}, NameOrMetric = {}", previousTs, value.getNameOrMetric());
+//            calculateValue(buckets, calculatorMap, keyCache, closure, curTags, previousBucket, previousTs, value);
+//        }
         return buckets;
     }
 
@@ -183,25 +191,37 @@ public class DefaultResultProcessor implements ResultProcessor,
         }
     }
 
-    private void calculateValue2(Buckets<MetricKey, String> buckets, Map<MetricKey, MetricCalculator> calculators,
-                                 MetricKeyCache keyCache, BucketClosure closure, Tags curTags,
-                                 Buckets<MetricKey, String>.Bucket previousBucket, long previousTs,
-                                 MetricSpecification metricSpecification) {
-        MetricKey key = keyCache.get(metricSpecification.getName(), curTags);
+    private void calculateValue(Buckets<MetricKey> buckets, Map<MetricKey, MetricCalculator> calculators,
+                                MetricKeyCache keyCache, BucketClosure closure, Tags tags,
+                                Buckets<MetricKey>.Bucket bucket, long timeStamp,
+                                MetricSpecification metricSpecification) {
+        MetricKey key = keyCache.get(metricSpecification.getName(), tags);
 
-        try {
-            MetricCalculator calculator = calculators.get(key);
-            if (null != calculator) {
-                closure.ts = previousTs;
-                closure.bucket = previousBucket;
-                double val = calculator.evaluate(closure);
-                buckets.add(key, key.getName(), previousTs, val);
+        MetricCalculator calculator = calculators.get(key);
+        if (null != calculator) {
+            closure.ts = timeStamp;
+            closure.bucket = bucket;
+            double val = 0;
+            try {
+                val = calculator.evaluate(closure);
+            } catch (UnknownReferenceException e) {
+                log.debug("UnknownReferenceException swallowed for calculation at timestamp {}: {}", timeStamp, e);
+                /*
+                 * Just because a reference was not in the same bucket does not
+                 * mean a real failure. It is legitimate.
+                 */
             }
-        } catch (UnknownReferenceException e) {
-            /*
-             * Just because a reference was not in the same bucket does not
-             * mean a real failure. It is legitimate.
-             */
+            //TODO: this is a temporary check. remove it when done.
+            Value currentValue = bucket.getValueByShortcut(key.getName());
+            if (null != currentValue) {
+                log.debug("Replacing current value of {} with {} for key {} at timestamp {}.", currentValue.getValue(), val, key.getName(), timeStamp);
+                if (currentValue.getValue() == val) {
+                    log.warn("Replacement is redundant.");
+                }
+            }
+            //TODO: end temporary check
+
+            buckets.add(key, timeStamp, val);
         }
     }
 
@@ -213,8 +233,8 @@ public class DefaultResultProcessor implements ResultProcessor,
             lineCount++;
             readerPeekBuffer.append(line);
             readerPeekBuffer.append('\n');
-
         }
+
         log.debug("LINES READ FROM OPENTSDB: {}", lineCount);
 
         String contents = readerPeekBuffer.toString();
@@ -225,7 +245,7 @@ public class DefaultResultProcessor implements ResultProcessor,
 
     private static class BucketClosure implements Closure {
         public long ts;
-        public Buckets<MetricKey, String>.Bucket bucket;
+        public Buckets<MetricKey>.Bucket bucket;
 
         public BucketClosure() {
 

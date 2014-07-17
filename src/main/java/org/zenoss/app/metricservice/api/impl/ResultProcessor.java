@@ -67,7 +67,7 @@ public interface ResultProcessor {
      * @throws UnknownReferenceException
      *             when a reference in an expression cannot be found.
      */
-    public Buckets<MetricKey, String> processResults(BufferedReader reader,
+    public Buckets<MetricKey> processResults(BufferedReader reader,
             List<MetricSpecification> queries, long bucketsize)
             throws IOException, ClassNotFoundException,
             UnknownReferenceException;

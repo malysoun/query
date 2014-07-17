@@ -65,7 +65,7 @@ public class JacksonResultsWriterTest {
         long startTs = DATA_START_TIMESTAMP;
         long endTs = DATA_END_TIMESTAMP;
         long step = DATA_TIMESTAMP_STEP;
-        Buckets<MetricKey, String> buckets = makeTestBuckets(queries, new ConstantSeriesGenerator(10.0), startTs, endTs, step);
+        Buckets<MetricKey> buckets = makeTestBuckets(queries, new ConstantSeriesGenerator(10.0), startTs, endTs, step);
 //        Buckets<MetricKey, String> buckets = BucketTestUtilities.makeAndPopulateTestBuckets();
         BucketTestUtilities.dumpBucketsToStdout(buckets);
         String id = TESTID;
@@ -80,15 +80,15 @@ public class JacksonResultsWriterTest {
         say(writer.toString());
     }
 
-    private Buckets<MetricKey, String> makeTestBuckets(List<MetricSpecification> queries, SeriesGenerator generator, long startTimestamp, long endTimestamp, long step) {
-        Buckets<MetricKey, String> result = new Buckets<>();
+    private Buckets<MetricKey> makeTestBuckets(List<MetricSpecification> queries, SeriesGenerator generator, long startTimestamp, long endTimestamp, long step) {
+        Buckets<MetricKey> result = new Buckets<>();
         for (MetricSpecification query : queries) {
             MetricKey key = MetricKey.fromValue(query);
             Map<Long, Double> dataPoints = generator.generateValues(startTimestamp, endTimestamp, step);
             int i = 0;
             for (Map.Entry<Long, Double> entry : dataPoints.entrySet()) {
                 i++;
-                result.add(key,key.getMetric(), entry.getKey(), entry.getValue());
+                result.add(key, entry.getKey(), entry.getValue());
             }
             say(String.format("Added %d values for metric %s to result.", i, key.getMetric()));
         }

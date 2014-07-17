@@ -42,9 +42,9 @@ public class BucketsTest {
 
     @Test
     public void testAdd() throws Exception {
-        Buckets<MetricKey, String> testSubject = makeTestBuckets();
-        testSubject.add(null, "", 123, 1.234);
-        testSubject.add(MetricKey.fromValue("MyKey", "MyMetric", "Foo=Bar"), "My.Metric.Formal.Name", 123, 4.567);
+        Buckets<MetricKey> testSubject = makeTestBuckets();
+        testSubject.add(MetricKey.fromValue("", "", ""), 123, 1.234);
+        testSubject.add(MetricKey.fromValue("My.Metric.Formal.Name", "MyMetric", "Foo=Bar"), 123, 4.567);
         Buckets.Bucket bucket = testSubject.getBucket(123);
         assertEquals("getValueByShortcut should return the value put in with that shortcut",
             bucket.getValueByShortcut("").getValue(), 1.234, EPSILON);
@@ -52,39 +52,42 @@ public class BucketsTest {
             bucket.getValueByShortcut("My.Metric.Formal.Name").getValue(), 4.567, EPSILON);
     }
 
-    private Buckets<MetricKey, String> makeTestBuckets() {
+    private Buckets<MetricKey> makeTestBuckets() {
         return new Buckets<>();
     }
 
     @Test
     public void testGetBucket() throws Exception {
-        Buckets<MetricKey, String> testSubject = makeTestBuckets();
-        testSubject.add(null, "", 123, 1.234);
-        MetricKey key = MetricKey.fromValue("MyKey", "MyMetric", "Foo=Bar");
-        testSubject.add(key, "My.Metric.Formal.Name", 123, 4.567);
+        Buckets<MetricKey> testSubject = makeTestBuckets();
+        MetricKey emptyKey = new MetricKey();
+        testSubject.add(emptyKey, 123, 1.234);
+        MetricKey key = MetricKey.fromValue("My.Metric.Formal.Name", "MyMetric", "Foo=Bar");
+        testSubject.add(key, 123, 4.567);
         Buckets.Bucket bucket = testSubject.getBucket(123);
 
-        assertEquals("getValueByShortcut should return the value put in with that shortcut", bucket.getValue(key).getValue(), 4.567, EPSILON);
-        assertEquals("getValueByShortcut should return the value put in with that shortcut", bucket.getValue(null).getValue(), 1.234, EPSILON);
+        assertEquals("getValue should return the value put in with that key", bucket.getValue(key).getValue(), 4.567, EPSILON);
+        assertEquals("getValue should return the value put in with that key", bucket.getValue(emptyKey).getValue(), 1.234, EPSILON);
+        assertEquals("getValueByShortcut should return the value put in with that shortcut", bucket.getValueByShortcut("My.Metric.Formal.Name").getValue(), 4.567, EPSILON);
+        assertEquals("getValueByShortcut should return the value put in with that shortcut", bucket.getValueByShortcut(null).getValue(), 1.234, EPSILON);
     }
 
     @Test
     public void testGetTimestamps() throws Exception {
-        Buckets<MetricKey, String> testSubject = makeTestBuckets();
+        Buckets<MetricKey> testSubject = makeTestBuckets();
         assertTrue("GetTimestamps", null != testSubject.getTimestamps());
     }
 
     @Test
     public void testGetSecondsPerBucket() throws Exception {
-        Buckets<MetricKey, String> testSubject = makeTestBuckets();
+        Buckets<MetricKey> testSubject = makeTestBuckets();
         assertTrue("Buckets should default to 300 seconds per bucket.", 300 == testSubject.getSecondsPerBucket());
-        Buckets<MetricKey, String> testSubject2 = new Buckets<>(123);
+        Buckets<MetricKey> testSubject2 = new Buckets<>(123);
         assertTrue("Buckets created with specified seconds per bucket should have that value.", 123 == testSubject2.getSecondsPerBucket());
     }
 
     @Test
     public void testDump() throws Exception {
-        Buckets<MetricKey, String> testSubject = BucketTestUtilities.makeAndPopulateTestBuckets();
+        Buckets<MetricKey> testSubject = BucketTestUtilities.makeAndPopulateTestBuckets();
         BucketTestUtilities.dumpBucketsToStdout(testSubject);
     }
 }

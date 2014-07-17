@@ -51,7 +51,7 @@ public class JacksonResultsWriter {
 
     private static final Logger log = LoggerFactory.getLogger(JacksonResultsWriter.class);
 
-    public void writeResults(Writer writer, List<MetricSpecification> queries, Buckets<MetricKey, String> buckets,
+    public void writeResults(Writer writer, List<MetricSpecification> queries, Buckets<MetricKey> buckets,
                              String id, String sourceId, long startTs, String startTimeConfig, long endTs,
                              String endTimeConfig, ReturnSet returnset, boolean series) throws IOException {
         if (series) {
@@ -66,7 +66,7 @@ public class JacksonResultsWriter {
         }
     }
 
-    private SeriesQueryResult makeResults(List<MetricSpecification> queries, Buckets<MetricKey, String> buckets,
+    private SeriesQueryResult makeResults(List<MetricSpecification> queries, Buckets<MetricKey> buckets,
                                           String id, String sourceId, long startTs, String startTimeConfig, long endTs,
                                           String endTimeConfig, ReturnSet returnset) {
         SeriesQueryResult result = new SeriesQueryResult();
@@ -83,7 +83,7 @@ public class JacksonResultsWriter {
     }
 
     private Collection<QueryResult> makeDataPointResults(Collection<MetricSpecification> queries,
-                                                         Buckets<MetricKey,String> buckets, long startTs, long endTs,
+                                                         Buckets<MetricKey> buckets, long startTs, long endTs,
                                                          ReturnSet returnset) {
         Collection<QueryResult> results = new ArrayList<>();
         if (null == buckets) {
@@ -102,7 +102,7 @@ public class JacksonResultsWriter {
         return results;
     }
 
-    private QueryResult getQueryResult(Buckets<MetricKey, String> buckets, long startTs, long endTs, ReturnSet returnset, MetricSpecification query) {
+    private QueryResult getQueryResult(Buckets<MetricKey> buckets, long startTs, long endTs, ReturnSet returnset, MetricSpecification query) {
         QueryResult qr = new QueryResult();
         qr.setMetric(query.getNameOrMetric());
         qr.setTags(query.getTags());
@@ -111,14 +111,14 @@ public class JacksonResultsWriter {
         return qr;
     }
 
-    private List<QueryResultDataPoint> makeDataPoints(Buckets<MetricKey, String> buckets, long startTs, long endTs,
+    private List<QueryResultDataPoint> makeDataPoints(Buckets<MetricKey> buckets, long startTs, long endTs,
                                                       ReturnSet returnset, String metricShortcut) {
         List<QueryResultDataPoint> dataPoints = new ArrayList<>();
         List<Long> timestamps = buckets.getTimestamps();
         for (long bts : timestamps) {
             bts *= buckets.getSecondsPerBucket();
             if (returnset == ReturnSet.ALL || (bts >= startTs && bts <= endTs)) {
-                Buckets<MetricKey, String>.Bucket bucket = buckets.getBucket(bts);
+                Buckets<MetricKey>.Bucket bucket = buckets.getBucket(bts);
                 if (null != bucket) {
                     Value value = bucket.getValueByShortcut(metricShortcut);
                     if (null != value) {

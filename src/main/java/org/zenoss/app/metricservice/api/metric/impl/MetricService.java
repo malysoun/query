@@ -396,7 +396,7 @@ public class MetricService implements MetricServiceAPI {
             log.info("Using JacksonWriter to generate JSON results.");
             try (JacksonWriter writer = new JacksonWriter(new OutputStreamWriter(output))) {
                 log.debug("processing results");
-                Buckets<MetricKey, String> buckets = resultsProcessor.processResults(reader, queries, bucketSize);
+                Buckets<MetricKey> buckets = resultsProcessor.processResults(reader, queries, bucketSize);
                 log.debug("results processed.");
                 //log.info("calling jacksonResultsWriter. Buckets = {}", Utils.jsonStringFromObject(buckets));
                 jacksonResultsWriter.writeResults(writer, queries, buckets,
