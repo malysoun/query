@@ -265,8 +265,7 @@ public class MetricSpecification {
      *
      * @return OpenTSDB URL query formatted String instance
      */
-    public String toString(String downsample,
-                           Map<String, List<String>> baseTags, boolean withRateOptions) {
+    public String toString(String downsample, Map<String, List<String>> baseTags, boolean withRateOptions) {
         StringBuilder buf = new StringBuilder();
         if (aggregator != null) {
             buf.append(aggregator).append(':');

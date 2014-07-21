@@ -99,7 +99,7 @@ public class DefaultResultProcessor implements ResultProcessor,
      */
     @Override
     public Buckets<IHasShortcut> processResults(BufferedReader reader, List<MetricSpecification> queries, long bucketSize)
-        throws ClassNotFoundException, IOException, UnknownReferenceException {
+        throws ClassNotFoundException, IOException {
 
         Buckets<IHasShortcut> buckets = new Buckets<>(bucketSize);
 
@@ -124,25 +124,19 @@ public class DefaultResultProcessor implements ResultProcessor,
 
         ObjectMapper mapper = Utils.getObjectMapper();
 
-        if (false && log.isDebugEnabled()) {
-            reader = logDebugInformation(reader);
-        }
-
         OpenTSDBQueryResult[] queryResult = mapper.readValue(reader, OpenTSDBQueryResult[].class);
         allResults.addAll(Arrays.asList(queryResult));
 
-        long dataPointTimeStamp = 0;
+        long dataPointTimeStamp = 0l;
         Tags curTags = null;
 
         // iterate over results (a result is a data series - with metric name, collection of points, tags, etc.
         for (OpenTSDBQueryResult result : allResults) {
-            log.debug("processing result: {} {}", result.metric, result.debugString());
             String metricName = result.metric;
             curTags = Tags.fromOpenTsdbTags(result.tags);
 
             // iterate over data points for the current series
             for (Map.Entry<Long, String> dataPointEntry : result.dps.entrySet()) {
-                log.debug("Processing Entry: ({},{})", dataPointEntry.getKey(), dataPointEntry.getValue());
                 double dataPointValue = Double.valueOf(dataPointEntry.getValue());
                 dataPointTimeStamp = dataPointEntry.getKey();
 
@@ -223,7 +217,7 @@ public class DefaultResultProcessor implements ResultProcessor,
         if (null != calculator) {
             closure.ts = timeStamp;
             closure.bucket = bucket;
-            double val = 0;
+            double val = 0l;
             try {
                 val = calculator.evaluate(closure);
             } catch (UnknownReferenceException e) {
@@ -240,7 +234,7 @@ public class DefaultResultProcessor implements ResultProcessor,
 
     private static BufferedReader logDebugInformation(BufferedReader reader) throws IOException {
         StringBuffer readerPeekBuffer = new StringBuffer(4096);
-        long lineCount = 0;
+        long lineCount = 0l;
         String line;
         while (null != (line = reader.readLine())) {
             lineCount++;

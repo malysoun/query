@@ -42,18 +42,14 @@ public class LinearInterpolator implements Interpolator {
 
     @Override
     public void interpolate(Buckets<IHasShortcut> buckets) {
-
-        /* Make two passes.
-         *  First pass: gather the following information:
-         *  * list of series in buckets
-         *  * for each series: first timestamp, last timestamp, timestamps of missing values, points bracketing missing
-         *
-         *  Second pass: use data gathered in first pass to calculate and fill in missing values
+        /*  First pass: gather the following information:
+         * list of series in buckets
+         * for each series: first timestamp, last timestamp, timestamps of missing values, points bracketing missing
          */
-        for (IHasShortcut key : (Set<IHasShortcut>)buckets.getPrimaryKeys()) {
+        for (IHasShortcut key : buckets.getPrimaryKeys()) {
             accumulators.add(new SeriesInterpolatingAccumulator(buckets, key));
         }
-
+        // Second pass: use data gathered in first pass to calculate and fill in missing values
         Map<Long, Buckets<IHasShortcut>.Bucket> bucketList = buckets.getBucketList();
         for (Map.Entry<Long, Buckets<IHasShortcut>.Bucket> bucketEntry : bucketList.entrySet()) {
             Buckets<IHasShortcut>.Bucket bucket = bucketEntry.getValue();
@@ -81,22 +77,19 @@ public class LinearInterpolator implements Interpolator {
         }
 
         public void accumulate(Long timestamp, Buckets<IHasShortcut>.Bucket bucket) {
-            // if no value:
-                // if nothing seen yet, keep going
-                // else: add to list of pending values
-            // if has value;
-                // if pending values are there, use to interpolate
-                // update lastSeenValue
-            // if no points seen yet and value has a value, store value
             if (!bucket.hasValue(key)) {
+                // no value - if we haven't seen any values yet, keep going.
                 if (null != lastBucketWithValue) {
+                    // we have seen a value before, so add this one to the list of pending values.
                     timestampsNeedingInterpolation.add(timestamp);
                 }
             } else {
                 // Found a value. Interpolate if we can
                 if (null != lastBucketWithValue && timestampsNeedingInterpolation.size() > 0) {
+                    // there are pending values, so interpolate
                     interpolateValues(timestamp, bucket);
                 }
+                // update last values
                 lastBucketWithValue = bucket;
                 timestampForLastBucketWithValue = timestamp;
             }
@@ -106,14 +99,14 @@ public class LinearInterpolator implements Interpolator {
             // if (x0, y0) is first point and (x1, y1) is last, and interpolated point is (x,y)
             // the formula looks like this:
             // y = y0 + ((x-x0) (y1-y0) / (x1 - x0)) , or y = y0 + (x-x0) * deltaY / deltaX
-            Long x0 = timestampForLastBucketWithValue;
-            Long x1 = timestamp;
+            long x0 = timestampForLastBucketWithValue;
+            long x1 = timestamp;
             double y0 = lastBucketWithValue.getValue(key).getValue();
             double y1 = bucket.getValue(key).getValue();
-            Long deltaX = x1 - x0;
+            long deltaX = x1 - x0;
             double deltaY = y1 - y0;
 
-            for (Long x : timestampsNeedingInterpolation) {
+            for (long x : timestampsNeedingInterpolation) {
                 double y = y0 + ((x - x0) * deltaY / deltaX);
                 buckets.addInterpolated(key, x, y);
             }

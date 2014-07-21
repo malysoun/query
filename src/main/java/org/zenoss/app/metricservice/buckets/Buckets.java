@@ -56,7 +56,7 @@ public class Buckets<P extends IHasShortcut> {
     /**
      * Default bucket size of 5 minutes
      */
-    public static final long DEFAULT_BUCKET_SIZE = 5 * 60; // 5 Minutes
+    public static final long DEFAULT_BUCKET_SIZE = 5l * 60; // 5 Minutes
 
     /**
      * Set of buckets indexed by time in seconds
@@ -153,7 +153,7 @@ public class Buckets<P extends IHasShortcut> {
 
         public boolean hasValue(Object key) {
             Value value = values.get(key);
-            return (value != null && value.getCount() > 0);
+            return (value != null && value.getCount() > 0l);
         }
 
         private void addInterpolated(P primaryKey, double value) {
@@ -178,7 +178,7 @@ public class Buckets<P extends IHasShortcut> {
      *            the number of seconds per each bucket
      */
     public Buckets(final long secondsPerBucket) {
-        if (secondsPerBucket > 0) {
+        if (secondsPerBucket > 0l) {
             this.secondsPerBucket = secondsPerBucket;
         } else {
             log.warn("secondsPerBucket must be positive. {} was specified. Defaulting to {}.", secondsPerBucket, this.secondsPerBucket);
@@ -246,7 +246,6 @@ public class Buckets<P extends IHasShortcut> {
      */
     public final Buckets<P>.Bucket getBucket(long timestamp) {
         long bucketTimestamp = getBucketTimestamp(timestamp);
-        log.info("getting bucket for timestamp {}. Internally, this is {}", timestamp, bucketTimestamp);
         return bucketList.get(bucketTimestamp);
     }
 

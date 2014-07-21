@@ -69,6 +69,5 @@ public interface ResultProcessor {
      */
     public Buckets<IHasShortcut> processResults(BufferedReader reader,
             List<MetricSpecification> queries, long bucketsize)
-            throws IOException, ClassNotFoundException,
-            UnknownReferenceException;
+            throws IOException, ClassNotFoundException;
 }
