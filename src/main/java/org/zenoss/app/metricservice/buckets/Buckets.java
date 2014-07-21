@@ -69,9 +69,6 @@ public class Buckets<P extends IHasShortcut> {
     private long secondsPerBucket = DEFAULT_BUCKET_SIZE;
 
     private OccurrenceCounter<P> primaryKeyOccurrences = new OccurrenceCounter<>();
-    private Map<P, Long> firstPrimaryKeyOccurrences = new HashMap<>();
-    private Map<P, Long> lastPrimaryKeyOccurrences = new HashMap<>();
-
 
     public ConcurrentMap<Long, Bucket> getBucketList() {
         return bucketList;
@@ -265,30 +262,13 @@ public class Buckets<P extends IHasShortcut> {
      * @return sorted list of downsampled time values
      */
     public final SortedSet<Long> getTimestamps() {
-        //Set<Long> keys = bucketList.keySet();
         SortedSet<Long> result = new TreeSet<>(bucketList.keySet());
-//        for (Long internalTimestamp : keys) {
-//            result.add(internalTimestamp * secondsPerBucket);
-//        }
         return result;
     }
 
     public final Set<P> getPrimaryKeys() {
         return primaryKeyOccurrences.getKeys();
     }
-
-    public final Map<P,Integer> getPrimaryKeyOccurrences() {
-        return primaryKeyOccurrences.getOccurrenceMap();
-    }
-
-    public long getFirstPrimaryKeyOccurrence(P primaryKey) {
-        return firstPrimaryKeyOccurrences.get(primaryKey);
-    }
-
-    public long getLastPrimaryKeyOccurrence(P primaryKey) {
-        return lastPrimaryKeyOccurrences.get(primaryKey);
-    }
-
 
     /**
      * Returns the secondsPerBucket value
