@@ -36,10 +36,7 @@ import org.zenoss.app.metricservice.api.model.MetricSpecification;
 
 import java.io.BufferedReader;
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class DataReaderGenerator {
     private Collection<OpenTSDBQueryResult> results = new ArrayList<OpenTSDBQueryResult>();
@@ -59,7 +56,7 @@ public class DataReaderGenerator {
         OpenTSDBQueryResult result = new OpenTSDBQueryResult();
         result.addTags(specification.getTags());
         Map<Long, Double> generatedValues = dataGen.generateValues(start, end, step);
-        Map<Long, String> dataPoints = new HashMap<>(generatedValues.size());
+        SortedMap<Long, String> dataPoints = new TreeMap<>();
         for (Map.Entry<Long, Double> entry : generatedValues.entrySet()) {
             dataPoints.put(entry.getKey(), entry.getValue().toString());
         }

@@ -32,6 +32,7 @@
 package org.zenoss.app.metricservice.buckets;
 
 import org.junit.Test;
+import org.zenoss.app.metricservice.api.impl.IHasShortcut;
 import org.zenoss.app.metricservice.api.impl.MetricKey;
 
 import static org.junit.Assert.assertEquals;
@@ -42,7 +43,7 @@ public class BucketsTest {
 
     @Test
     public void testAdd() throws Exception {
-        Buckets<MetricKey> testSubject = makeTestBuckets();
+        Buckets<IHasShortcut> testSubject = makeTestBuckets();
         testSubject.add(MetricKey.fromValue("", "", ""), 123, 1.234);
         testSubject.add(MetricKey.fromValue("My.Metric.Formal.Name", "MyMetric", "Foo=Bar"), 123, 4.567);
         Buckets.Bucket bucket = testSubject.getBucket(123);
@@ -52,18 +53,18 @@ public class BucketsTest {
             bucket.getValueByShortcut("My.Metric.Formal.Name").getValue(), 4.567, EPSILON);
     }
 
-    private Buckets<MetricKey> makeTestBuckets() {
+    private Buckets<IHasShortcut> makeTestBuckets() {
         return new Buckets<>();
     }
 
     @Test
     public void testGetBucket() throws Exception {
-        Buckets<MetricKey> testSubject = makeTestBuckets();
+        Buckets<IHasShortcut> testSubject = makeTestBuckets();
         MetricKey emptyKey = new MetricKey();
         testSubject.add(emptyKey, 123, 1.234);
         MetricKey key = MetricKey.fromValue("My.Metric.Formal.Name", "MyMetric", "Foo=Bar");
         testSubject.add(key, 123, 4.567);
-        Buckets.Bucket bucket = testSubject.getBucket(123);
+        Buckets<IHasShortcut>.Bucket bucket = testSubject.getBucket(123);
 
         assertEquals("getValue should return the value put in with that key", bucket.getValue(key).getValue(), 4.567, EPSILON);
         assertEquals("getValue should return the value put in with that key", bucket.getValue(emptyKey).getValue(), 1.234, EPSILON);
@@ -73,21 +74,21 @@ public class BucketsTest {
 
     @Test
     public void testGetTimestamps() throws Exception {
-        Buckets<MetricKey> testSubject = makeTestBuckets();
+        Buckets<IHasShortcut> testSubject = makeTestBuckets();
         assertTrue("GetTimestamps", null != testSubject.getTimestamps());
     }
 
     @Test
     public void testGetSecondsPerBucket() throws Exception {
-        Buckets<MetricKey> testSubject = makeTestBuckets();
+        Buckets<IHasShortcut> testSubject = makeTestBuckets();
         assertTrue("Buckets should default to 300 seconds per bucket.", 300 == testSubject.getSecondsPerBucket());
-        Buckets<MetricKey> testSubject2 = new Buckets<>(123);
+        Buckets<IHasShortcut> testSubject2 = new Buckets<>(123);
         assertTrue("Buckets created with specified seconds per bucket should have that value.", 123 == testSubject2.getSecondsPerBucket());
     }
 
     @Test
     public void testDump() throws Exception {
-        Buckets<MetricKey> testSubject = BucketTestUtilities.makeAndPopulateTestBuckets();
+        Buckets<IHasShortcut> testSubject = BucketTestUtilities.makeAndPopulateTestBuckets();
         BucketTestUtilities.dumpBucketsToStdout(testSubject);
     }
 }

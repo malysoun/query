@@ -41,7 +41,7 @@ public class LinearInterpolator implements Interpolator {
     private List<SeriesInterpolatingAccumulator> accumulators = new ArrayList<>();
 
     @Override
-    public void interpolate(Buckets buckets) {
+    public void interpolate(Buckets<IHasShortcut> buckets) {
 
         /* Make two passes.
          *  First pass: gather the following information:
@@ -54,9 +54,9 @@ public class LinearInterpolator implements Interpolator {
             accumulators.add(new SeriesInterpolatingAccumulator(buckets, key));
         }
 
-        Map<Long, Buckets.Bucket> bucketList = buckets.getBucketList();
-        for (Map.Entry<Long, Buckets.Bucket> bucketEntry : bucketList.entrySet()) {
-            Buckets.Bucket bucket = bucketEntry.getValue();
+        Map<Long, Buckets<IHasShortcut>.Bucket> bucketList = buckets.getBucketList();
+        for (Map.Entry<Long, Buckets<IHasShortcut>.Bucket> bucketEntry : bucketList.entrySet()) {
+            Buckets<IHasShortcut>.Bucket bucket = bucketEntry.getValue();
             Long timestamp = bucketEntry.getKey();
             for (SeriesInterpolatingAccumulator accumulator : accumulators) {
                 accumulator.accumulate(timestamp, bucket);
@@ -64,14 +64,14 @@ public class LinearInterpolator implements Interpolator {
         }
     }
 
-    private class SeriesInterpolatingAccumulator {
+    static class SeriesInterpolatingAccumulator {
         private final IHasShortcut key;
-        private final Buckets buckets;
+        private final Buckets<IHasShortcut> buckets;
         private Long timestampForLastBucketWithValue = null;
-        private Buckets.Bucket lastBucketWithValue = null;
+        private Buckets<IHasShortcut>.Bucket lastBucketWithValue = null;
         private List<Long> timestampsNeedingInterpolation = new ArrayList<>();
 
-        public SeriesInterpolatingAccumulator(Buckets buckets, IHasShortcut key) {
+        public SeriesInterpolatingAccumulator(Buckets<IHasShortcut> buckets, IHasShortcut key) {
             this.key = key;
             this.buckets = buckets;
         }
@@ -80,7 +80,7 @@ public class LinearInterpolator implements Interpolator {
             return key;
         }
 
-        public void accumulate(Long timestamp, Buckets.Bucket bucket) {
+        public void accumulate(Long timestamp, Buckets<IHasShortcut>.Bucket bucket) {
             // if no value:
                 // if nothing seen yet, keep going
                 // else: add to list of pending values
@@ -102,7 +102,7 @@ public class LinearInterpolator implements Interpolator {
             }
         }
 
-        private void interpolateValues(Long timestamp, Buckets.Bucket bucket) {
+        private void interpolateValues(Long timestamp, Buckets<IHasShortcut>.Bucket bucket) {
             // if (x0, y0) is first point and (x1, y1) is last, and interpolated point is (x,y)
             // the formula looks like this:
             // y = y0 + ((x-x0) (y1-y0) / (x1 - x0)) , or y = y0 + (x-x0) * deltaY / deltaX

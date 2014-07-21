@@ -374,7 +374,7 @@ public class MetricService implements MetricServiceAPI {
 
         private void replaceSeriesDataPointsWithLastInRangeDataPoint(OpenTSDBQueryResult series, long startTimeStamp, long endTimeStamp) {
             long currentPointTimeStamp;
-            Map<Long, String> dataPointSingleton = new HashMap<>(1);
+            SortedMap<Long, String> dataPointSingleton = new TreeMap<>();
             Map.Entry<Long, String> lastDataPoint = null;
             for (Map.Entry<Long, String> dataPoint : series.getDataPoints().entrySet()) {
                 currentPointTimeStamp = dataPoint.getKey();
@@ -396,7 +396,7 @@ public class MetricService implements MetricServiceAPI {
             log.info("Using JacksonWriter to generate JSON results.");
             try (JacksonWriter writer = new JacksonWriter(new OutputStreamWriter(output))) {
                 log.debug("processing results");
-                Buckets<MetricKey> buckets = resultsProcessor.processResults(reader, queries, bucketSize);
+                Buckets<IHasShortcut> buckets = resultsProcessor.processResults(reader, queries, bucketSize);
                 log.debug("results processed.");
                 //log.info("calling jacksonResultsWriter. Buckets = {}", Utils.jsonStringFromObject(buckets));
                 jacksonResultsWriter.writeResults(writer, queries, buckets,

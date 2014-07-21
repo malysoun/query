@@ -31,7 +31,6 @@
 
 package org.zenoss.app.metricservice.api.impl;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.buckets.Buckets;
@@ -57,10 +56,10 @@ public class DefaultResultProcessorTest {
     private static final String CALCULATED_VALUE_SERIES_NAME = "CalculatedValue";
 
     private static final long START_TIME = 100;
-    private static final long END_TIME = 200;
-    private static final long BUCKET_SIZE = 10;
-    private static final long HOURLY_STEP = 5;
-    private static final long DAILY_STEP = HOURLY_STEP * 5;
+    private static final long END_TIME = 120;
+    private static final long BUCKET_SIZE = 4;
+    private static final long HOURLY_STEP = 2;
+    private static final long DAILY_STEP = HOURLY_STEP * 3;
 
 //    private static final long START_TIME = 1388534400; // Midnight, 1/1/14
 //    private static final long END_TIME = 1389744000; // Midnight, 1/15/14
@@ -81,25 +80,26 @@ public class DefaultResultProcessorTest {
         assertEquals("lookup should return correct value for series.", myValue.getValue(), foundValue, EPSILON);
     }
 
-    @Ignore("failing test - interpolation needs work.")
     @Test
     public void testProcessResults() throws Exception {
         DefaultResultProcessor victim = new DefaultResultProcessor();
-        BufferedReader reader = makeReader();
-        List<MetricSpecification> queries = makeQueries();
-        Buckets<MetricKey> results = victim.processResults(reader, queries, BUCKET_SIZE);
+        BufferedReader reader = makeReader();  // creates data for test
+        List<MetricSpecification> queries = makeQueries(); // creates queries for test
+        Buckets<IHasShortcut> results = victim.processResults(reader, queries, BUCKET_SIZE);
         assertNotNull("Result of processing query should not be null", results);
         assertEquals("Seconds per bucket should match specified bucket size.", BUCKET_SIZE, results.getSecondsPerBucket());
         for (Long timestamp : results.getTimestamps()) {
-            Buckets.Bucket bucket = results.getBucket(timestamp * BUCKET_SIZE);
-            assertNotNull(String.format("Null bucket found at timestamp %d.", timestamp * BUCKET_SIZE), bucket);
+            Buckets.Bucket bucket = results.getBucket(timestamp);
+            assertNotNull(String.format("Null bucket found at timestamp %d.", timestamp), bucket);
             for (MetricSpecification query : queries) {
-                Value value = bucket.getValueByShortcut(query.getNameOrMetric());
-                String pointDescriptor = String.format("series %s at timestamp %d", query.getNameOrMetric(), timestamp * BUCKET_SIZE);
+                String nameOrMetric = query.getNameOrMetric();
+                Value value = bucket.getValueByShortcut(nameOrMetric);
+                String pointDescriptor = String.format("series %s at timestamp %d", nameOrMetric, timestamp);
                 assertNotNull(String.format("Missing value for %s.", pointDescriptor), value);
                 if (query.getNameOrMetric().equals(CALCULATED_VALUE_SERIES_NAME)) {
+                    System.out.println(String.format("value of %s at %d is %f", nameOrMetric, timestamp, value.getValue()));
                     assertEquals(String.format("Value of %s not correct.", pointDescriptor), CONST_VALUE + CONST_VALUE, value.getValue(), EPSILON);
-                } else {
+                } else if (null != value) {
                    assertEquals(String.format("Value of %s not correct.", pointDescriptor), CONST_VALUE, value.getValue(), EPSILON);
                 }
             }

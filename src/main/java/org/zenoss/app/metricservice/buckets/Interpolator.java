@@ -31,6 +31,8 @@ package org.zenoss.app.metricservice.buckets;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+import org.zenoss.app.metricservice.api.impl.IHasShortcut;
+
 public interface Interpolator {
-    public void interpolate(Buckets buckets);
+    public void interpolate(Buckets<IHasShortcut> buckets);
 }

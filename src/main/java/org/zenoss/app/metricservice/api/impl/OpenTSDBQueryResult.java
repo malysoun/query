@@ -33,14 +33,12 @@ package org.zenoss.app.metricservice.api.impl;
 
 import com.google.common.base.Objects;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class OpenTSDBQueryResult {
     public List<String> aggregateTags;
 
-    public Map<Long,String> dps;
+    public SortedMap<Long,String> dps;
     public String metric;
     public Map<String, String> tags;
     public List<String> tsuids;
@@ -66,7 +64,7 @@ public class OpenTSDBQueryResult {
 
     public void addDataPoint(long i, double pointValue) {
         if (null == dps) {
-            dps = new HashMap<>();
+            dps = new TreeMap<>();
         }
         dps.put(i, Double.toString(pointValue));
     }
@@ -75,7 +73,7 @@ public class OpenTSDBQueryResult {
         return dps;
     }
 
-    public void setDataPoints(Map<Long, String> dps) {
+    public void setDataPoints(SortedMap<Long, String> dps) {
         this.dps = dps;
     }
 

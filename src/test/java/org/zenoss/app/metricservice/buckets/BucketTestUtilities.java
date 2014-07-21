@@ -31,6 +31,7 @@
 
 package org.zenoss.app.metricservice.buckets;
 
+import org.zenoss.app.metricservice.api.impl.IHasShortcut;
 import org.zenoss.app.metricservice.api.impl.MetricKey;
 import org.zenoss.app.metricservice.testutil.ConstantSeriesGenerator;
 import org.zenoss.app.metricservice.testutil.SeriesGenerator;
@@ -40,8 +41,8 @@ import java.io.PrintStream;
 import java.util.Map;
 
 public class BucketTestUtilities {
-    public static Buckets<MetricKey> makeAndPopulateTestBuckets() {
-        Buckets<MetricKey> result = new Buckets<>(51);
+    public static Buckets<IHasShortcut> makeAndPopulateTestBuckets() {
+        Buckets<IHasShortcut> result = new Buckets<>(51);
         MetricKey metric1 = MetricKey.fromValue("Metric1", "GizmosPerGadget", "device=dev1 Series=M1");
         SeriesGenerator generator = new ConstantSeriesGenerator(5.0);
         Map<Long, Double> metric1Values = generator.generateValues(3, 1203, 7);
@@ -56,8 +57,8 @@ public class BucketTestUtilities {
         return result;
     }
 
-    public static void dumpBucketsToStdout(Buckets<MetricKey> testSubject) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    public static void dumpBucketsToStdout(Buckets<IHasShortcut> testSubject) {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream testStream = new PrintStream(baos);
         testSubject.dump(testStream);
         System.out.println(String.format("TestSubject: %s", baos.toString()));

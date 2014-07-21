@@ -38,6 +38,8 @@ import org.zenoss.app.metricservice.api.impl.IHasShortcut;
 
 import java.io.PrintStream;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Provides a utility to bucket metrics into defined sized chunks, averaging the
@@ -59,7 +61,7 @@ public class Buckets<P extends IHasShortcut> {
     /**
      * Set of buckets indexed by time in seconds
      */
-    private Map<Long, Bucket> bucketList = new HashMap<>();
+    private ConcurrentMap<Long, Buckets<P>.Bucket> bucketList = new ConcurrentHashMap<>();
 
     /**
      * Specifies the size of each bucket in seconds
@@ -71,7 +73,7 @@ public class Buckets<P extends IHasShortcut> {
     private Map<P, Long> lastPrimaryKeyOccurrences = new HashMap<>();
 
 
-    public Map<Long, Bucket> getBucketList() {
+    public ConcurrentMap<Long, Bucket> getBucketList() {
         return bucketList;
     }
 
@@ -198,8 +200,7 @@ public class Buckets<P extends IHasShortcut> {
      *            value to add
      */
     public final void add(final P primaryKey, final long timestamp, final double value) {
-        long ts = timestamp / secondsPerBucket;
-
+        long ts = getBucketTimestamp(timestamp);
         // Get existing or create new bucket for this timestamp
         Bucket b = bucketList.get(ts);
         if (b == null) {
@@ -224,7 +225,7 @@ public class Buckets<P extends IHasShortcut> {
      *            value to add
      */
     public final void addInterpolated(final P primaryKey, final long timestamp, final double value) {
-        long ts = timestamp / secondsPerBucket;
+        long ts = getBucketTimestamp(timestamp);
 
         // Get existing or create new bucket for this timestamp
         Bucket b = bucketList.get(ts);
@@ -246,8 +247,14 @@ public class Buckets<P extends IHasShortcut> {
      * 
      * @return bucket of the given timestamp (that will be downsampled) or null
      */
-    public final Bucket getBucket(long timestamp) {
-        return bucketList.get(timestamp / secondsPerBucket);
+    public final Buckets<P>.Bucket getBucket(long timestamp) {
+        long bucketTimestamp = getBucketTimestamp(timestamp);
+        log.info("getting bucket for timestamp {}. Internally, this is {}", timestamp, bucketTimestamp);
+        return bucketList.get(bucketTimestamp);
+    }
+
+    private long getBucketTimestamp(long timestamp) {
+        return (timestamp / secondsPerBucket) * secondsPerBucket;
     }
 
     /**
@@ -257,9 +264,12 @@ public class Buckets<P extends IHasShortcut> {
      * 
      * @return sorted list of downsampled time values
      */
-    public final List<Long> getTimestamps() {
-        List<Long> result = new ArrayList<>(bucketList.keySet());
-        Collections.sort(result);
+    public final SortedSet<Long> getTimestamps() {
+        //Set<Long> keys = bucketList.keySet();
+        SortedSet<Long> result = new TreeSet<>(bucketList.keySet());
+//        for (Long internalTimestamp : keys) {
+//            result.add(internalTimestamp * secondsPerBucket);
+//        }
         return result;
     }
 
