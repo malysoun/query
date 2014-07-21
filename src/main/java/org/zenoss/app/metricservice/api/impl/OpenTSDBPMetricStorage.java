@@ -112,7 +112,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
 
         throwWebExceptionIfHttpResponseIsBad(response);
 
-        return new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+        return new BufferedReader(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
     }
 
     private static void throwWebExceptionIfHttpResponseIsBad(HttpResponse response) throws WebApplicationException {
@@ -133,7 +133,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
     }
 
     private static String streamToString(InputStream stream) {
-        Scanner s = new Scanner(stream).useDelimiter("\\A");
+        Scanner s = new Scanner(stream, "UTF-8").useDelimiter("\\A");
         return s.hasNext() ? s.next() : "";
     }
 

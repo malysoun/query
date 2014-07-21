@@ -150,7 +150,7 @@ public class MockMetricStorage implements MetricStorageAPI {
             }
             resultList.add(result);
         }
-        baos.write(Utils.jsonStringFromObject(resultList).getBytes());
+        baos.write(Utils.jsonStringFromObject(resultList).getBytes("UTF-8"));
 
         log.debug("Generated {} lines of data", count);
         return baos.toByteArray();
@@ -182,8 +182,8 @@ public class MockMetricStorage implements MetricStorageAPI {
             List<MetricSpecification> queries) throws IOException {
         byte[] data = generateData(config, id, startTime, endTime, returnset,
                 series, downsample, tags, queries);
-        return new BufferedReader(new InputStreamReader(
-                new ByteArrayInputStream(data)));
+        return new BufferedReader(new InputStreamReader(new ByteArrayInputStream(data),"UTF-8"));
+
     }
 
     /*
