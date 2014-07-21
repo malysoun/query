@@ -300,19 +300,9 @@ public class Buckets<P extends IHasShortcut> {
 
     private class OccurrenceCounter<K> {
         private Map<K, Long> occurrenceMap = new HashMap<>();
-        //private Map<K, Long> firstOccurrenceMap = new HashMap<>();
-        //private Map<K, Long> lastOccurrenceMap = new HashMap<>();
 
         public void logOccurrence(K key, long timestamp) {
             increment(key);
-//            Long firstOccurrence = firstOccurrenceMap.get(key);
-//            if (null == firstOccurrence || firstOccurrence > timestamp) {
-//                firstOccurrenceMap.put(key, timestamp);
-//            }
-//            Long lastOccurrence = lastOccurrenceMap.get(key);
-//            if (null == lastOccurrence || lastOccurrence < timestamp) {
-//                lastOccurrenceMap.put(key, timestamp);
-//            }
         }
 
         private void increment(K key) {
@@ -323,10 +313,6 @@ public class Buckets<P extends IHasShortcut> {
                 occurrenceMap.put(key, count++);
             }
         }
-//
-//        public Map<K, Long> getOccurrenceMap() {
-//            return Collections.unmodifiableMap(occurrenceMap);
-//        }
 
         public Set<K> getKeys() {
             return Collections.unmodifiableSet(occurrenceMap.keySet());
