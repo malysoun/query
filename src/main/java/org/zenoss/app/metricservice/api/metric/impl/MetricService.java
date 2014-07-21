@@ -394,7 +394,7 @@ public class MetricService implements MetricServiceAPI {
         private void writeResultsUsingJacksonWriter(OutputStream output, BufferedReader reader, long bucketSize)
             throws IOException, UnknownReferenceException, ClassNotFoundException {
             log.info("Using JacksonWriter to generate JSON results.");
-            try (JacksonWriter writer = new JacksonWriter(new OutputStreamWriter(output))) {
+            try (JacksonWriter writer = new JacksonWriter(new OutputStreamWriter(output, "UTF-8"))) {
                 log.debug("processing results");
                 Buckets<IHasShortcut> buckets = resultsProcessor.processResults(reader, queries, bucketSize);
                 log.debug("results processed.");
