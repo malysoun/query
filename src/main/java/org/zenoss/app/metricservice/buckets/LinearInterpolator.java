@@ -42,14 +42,18 @@ public class LinearInterpolator implements Interpolator {
 
     @Override
     public void interpolate(Buckets<IHasShortcut> buckets) {
-        /*  First pass: gather the following information:
-         * list of series in buckets
-         * for each series: first timestamp, last timestamp, timestamps of missing values, points bracketing missing
+
+        /* Make two passes.
+         *  First pass: gather the following information:
+         *  * list of series in buckets
+         *  * for each series: first timestamp, last timestamp, timestamps of missing values, points bracketing missing
+         *
+         *  Second pass: use data gathered in first pass to calculate and fill in missing values
          */
         for (IHasShortcut key : buckets.getPrimaryKeys()) {
             accumulators.add(new SeriesInterpolatingAccumulator(buckets, key));
         }
-        // Second pass: use data gathered in first pass to calculate and fill in missing values
+
         Map<Long, Buckets<IHasShortcut>.Bucket> bucketList = buckets.getBucketList();
         for (Map.Entry<Long, Buckets<IHasShortcut>.Bucket> bucketEntry : bucketList.entrySet()) {
             Buckets<IHasShortcut>.Bucket bucket = bucketEntry.getValue();

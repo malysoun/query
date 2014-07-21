@@ -47,8 +47,6 @@ import java.util.Map;
 
 public class JacksonResultsWriterTest {
     private static final String TESTID = "TEST_ID";
-    //private static final long DATA_START_TIMESTAMP = 1078033800;
-    //private static final long DATA_END_TIMESTAMP = 1078121400;
     private static final long DATA_START_TIMESTAMP = 1078033800;
     private static final long DATA_END_TIMESTAMP = 1078034400;
     private static final long DATA_TIMESTAMP_STEP = 600;
@@ -56,7 +54,6 @@ public class JacksonResultsWriterTest {
     @Test
     public void testWriteResults() throws Exception {
         JacksonResultsWriter victim = new JacksonResultsWriter();
-        //JacksonWriter writer, List<MetricSpecification> queries, Buckets<MetricKey, String> buckets, String id, String sourceId, long startTs, String startTimeConfig, long endTs, String endTimeConfig, ReturnSet returnset, boolean series
         String[] queryStrings = new String[] {
             "avg:laLoadInt1{tag1=*,tag2=*}",
             "sum:laLoadInt5{tag1=*,tag2=*}" };
@@ -66,7 +63,6 @@ public class JacksonResultsWriterTest {
         long endTs = DATA_END_TIMESTAMP;
         long step = DATA_TIMESTAMP_STEP;
         Buckets<IHasShortcut> buckets = makeTestBuckets(queries, new ConstantSeriesGenerator(10.0), startTs, endTs, step);
-//        Buckets<MetricKey, String> buckets = BucketTestUtilities.makeAndPopulateTestBuckets();
         BucketTestUtilities.dumpBucketsToStdout(buckets);
         String id = TESTID;
         String sourceId = "test_source_id";

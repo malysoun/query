@@ -38,6 +38,8 @@ import org.zenoss.app.metricservice.buckets.Value;
 import org.zenoss.app.metricservice.calculators.Closure;
 import org.zenoss.app.metricservice.testutil.ConstantSeriesGenerator;
 import org.zenoss.app.metricservice.testutil.DataReaderGenerator;
+import org.zenoss.app.metricservice.testutil.SeriesGenerator;
+import org.zenoss.app.metricservice.testutil.YEqualsXSeriesGenerator;
 
 import java.io.BufferedReader;
 import java.util.ArrayList;
@@ -55,17 +57,18 @@ public class DefaultResultProcessorTest {
     private static final double CONST_VALUE = 2.0;
     private static final String CALCULATED_VALUE_SERIES_NAME = "CalculatedValue";
 
-    private static final long START_TIME = 100;
-    private static final long END_TIME = 120;
-    private static final long BUCKET_SIZE = 4;
-    private static final long HOURLY_STEP = 2;
-    private static final long DAILY_STEP = HOURLY_STEP * 3;
+    // The commented-out lines below are an 'easy' case for debugging.
+//    private static final long START_TIME = 100;
+//    private static final long END_TIME = 120;
+//    private static final long BUCKET_SIZE = 4;
+//    private static final long HOURLY_STEP = 2;
+//    private static final long DAILY_STEP = HOURLY_STEP * 3;
 
-//    private static final long START_TIME = 1388534400; // Midnight, 1/1/14
-//    private static final long END_TIME = 1389744000; // Midnight, 1/15/14
-//    private static final long BUCKET_SIZE = 3600;
-//    private static final long HOURLY_STEP = 3600;
-//    private static final long DAILY_STEP = HOURLY_STEP * 24;
+    private static final long START_TIME = 1388534400; // Midnight, 1/1/14
+    private static final long END_TIME = 1389744000; // Midnight, 1/15/14
+    private static final long BUCKET_SIZE = 3600;
+    private static final long HOURLY_STEP = 3600;
+    private static final long DAILY_STEP = HOURLY_STEP * 24;
 
 
     @Test
@@ -81,7 +84,7 @@ public class DefaultResultProcessorTest {
     }
 
     @Test
-    public void testProcessResults() throws Exception {
+    public void testProcessResultsWithConstantSeries() throws Exception {
         DefaultResultProcessor victim = new DefaultResultProcessor();
         BufferedReader reader = makeReader();  // creates data for test
         List<MetricSpecification> queries = makeQueries(); // creates queries for test
@@ -106,9 +109,43 @@ public class DefaultResultProcessorTest {
         }
     }
 
+    @Test
+    public void testProcessResultsWithYEqualsXSeries() throws Exception {
+        DefaultResultProcessor victim = new DefaultResultProcessor();
+        BufferedReader reader = makeYEqualsXReader();  // creates data for test
+        List<MetricSpecification> queries = makeQueries(); // creates queries for test
+        Buckets<IHasShortcut> results = victim.processResults(reader, queries, BUCKET_SIZE);
+        assertNotNull("Result of processing query should not be null", results);
+        assertEquals("Seconds per bucket should match specified bucket size.", BUCKET_SIZE, results.getSecondsPerBucket());
+        for (Long timestamp : results.getTimestamps()) {
+            Buckets.Bucket bucket = results.getBucket(timestamp);
+            assertNotNull(String.format("Null bucket found at timestamp %d.", timestamp), bucket);
+            for (MetricSpecification query : queries) {
+                String nameOrMetric = query.getNameOrMetric();
+                Value value = bucket.getValueByShortcut(nameOrMetric);
+                String pointDescriptor = String.format("series %s at timestamp %d", nameOrMetric, timestamp);
+                assertNotNull(String.format("Missing value for %s.", pointDescriptor), value);
+                if (query.getNameOrMetric().equals(CALCULATED_VALUE_SERIES_NAME)) {
+                    System.out.println(String.format("value of %s at %d is %f", nameOrMetric, timestamp, value.getValue()));
+                    assertEquals(String.format("Value of %s not correct.", pointDescriptor), timestamp + timestamp, value.getValue(), EPSILON);
+                } else if (null != value) {
+                    assertEquals(String.format("Value of %s not correct.", pointDescriptor), timestamp, value.getValue(), EPSILON);
+                }
+            }
+        }
+    }
+
     private BufferedReader makeReader() {
         DataReaderGenerator generator = new DataReaderGenerator();
-        ConstantSeriesGenerator dataGen = new ConstantSeriesGenerator(CONST_VALUE);
+        SeriesGenerator dataGen = new ConstantSeriesGenerator(CONST_VALUE);
+        generator.addSeries(MetricSpecification.fromString("hourlyMetric"), dataGen, START_TIME, END_TIME, HOURLY_STEP);
+        generator.addSeries(MetricSpecification.fromString("dailyMetric"), dataGen, START_TIME, END_TIME, DAILY_STEP);
+        return generator.makeReader();
+    }
+
+    private BufferedReader makeYEqualsXReader() {
+        DataReaderGenerator generator = new DataReaderGenerator();
+        SeriesGenerator dataGen = new YEqualsXSeriesGenerator();
         generator.addSeries(MetricSpecification.fromString("hourlyMetric"), dataGen, START_TIME, END_TIME, HOURLY_STEP);
         generator.addSeries(MetricSpecification.fromString("dailyMetric"), dataGen, START_TIME, END_TIME, DAILY_STEP);
         return generator.makeReader();

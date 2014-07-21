@@ -38,8 +38,6 @@ import org.zenoss.app.metricservice.api.impl.IHasShortcut;
 
 import java.io.PrintStream;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * Provides a utility to bucket metrics into defined sized chunks, averaging the
@@ -61,7 +59,7 @@ public class Buckets<P extends IHasShortcut> {
     /**
      * Set of buckets indexed by time in seconds
      */
-    private ConcurrentMap<Long, Buckets<P>.Bucket> bucketList = new ConcurrentHashMap<>();
+    private Map<Long, Buckets<P>.Bucket> bucketList = new TreeMap<>();
 
     /**
      * Specifies the size of each bucket in seconds
@@ -70,7 +68,7 @@ public class Buckets<P extends IHasShortcut> {
 
     private OccurrenceCounter<P> primaryKeyOccurrences = new OccurrenceCounter<>();
 
-    public ConcurrentMap<Long, Bucket> getBucketList() {
+    public Map<Long, Bucket> getBucketList() {
         return bucketList;
     }
 
@@ -301,32 +299,35 @@ public class Buckets<P extends IHasShortcut> {
     }
 
     private class OccurrenceCounter<K> {
-        Map<K, Integer> occurrenceMap = new HashMap<>();
-        Map<K, Long> firstOccurrenceMap = new HashMap<>();
-        Map<K, Long> lastOccurrenceMap = new HashMap<>();
+        private Map<K, Long> occurrenceMap = new HashMap<>();
+        //private Map<K, Long> firstOccurrenceMap = new HashMap<>();
+        //private Map<K, Long> lastOccurrenceMap = new HashMap<>();
 
         public void logOccurrence(K key, long timestamp) {
             increment(key);
-            Long firstOccurrence = firstOccurrenceMap.get(key);
-            if (null == firstOccurrence || firstOccurrence > timestamp) {
-                firstOccurrenceMap.put(key, timestamp);
-            }
-            Long lastOccurrence = lastOccurrenceMap.get(key);
-            if (null == lastOccurrence || lastOccurrence < timestamp) {
-                lastOccurrenceMap.put(key, timestamp);
-            }
+//            Long firstOccurrence = firstOccurrenceMap.get(key);
+//            if (null == firstOccurrence || firstOccurrence > timestamp) {
+//                firstOccurrenceMap.put(key, timestamp);
+//            }
+//            Long lastOccurrence = lastOccurrenceMap.get(key);
+//            if (null == lastOccurrence || lastOccurrence < timestamp) {
+//                lastOccurrenceMap.put(key, timestamp);
+//            }
         }
+
         private void increment(K key) {
-            Integer count = occurrenceMap.get(key);
+            Long count = occurrenceMap.get(key);
             if (null == count) {
-                occurrenceMap.put(key,1);
+                occurrenceMap.put(key,Long.valueOf(1));
             } else {
                 occurrenceMap.put(key, count++);
             }
         }
-        public Map<K, Integer> getOccurrenceMap() {
-            return Collections.unmodifiableMap(occurrenceMap);
-        }
+//
+//        public Map<K, Long> getOccurrenceMap() {
+//            return Collections.unmodifiableMap(occurrenceMap);
+//        }
+
         public Set<K> getKeys() {
             return Collections.unmodifiableSet(occurrenceMap.keySet());
         }

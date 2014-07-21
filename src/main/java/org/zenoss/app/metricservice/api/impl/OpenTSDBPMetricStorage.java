@@ -112,7 +112,7 @@ public class OpenTSDBPMetricStorage implements MetricStorageAPI {
 
         throwWebExceptionIfHttpResponseIsBad(response);
 
-        return new BufferedReader(new InputStreamReader((response.getEntity().getContent())));
+        return new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
     }
 
     private static void throwWebExceptionIfHttpResponseIsBad(HttpResponse response) throws WebApplicationException {
