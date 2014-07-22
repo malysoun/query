@@ -119,13 +119,17 @@ public class Buckets<P extends IHasShortcut> {
          * @return the value associated with the primary key or null
          */
         public final Value getValue(final P key) {
-            return values.get(key);
+            return getOrCreateValue(key);
         }
 
         private final Value getOrCreateValue(final P primaryKey) {
             if (null == primaryKey) {
                 throw new IllegalArgumentException("primary Key cannot be null.");
             }
+            if (null == primaryKey.getShortcut()) {
+                throw new IllegalArgumentException("shortcut cannot be null.");
+            }
+
             // Fetch existing value, if it exists
             Value value = values.get(primaryKey);
 
@@ -146,7 +150,14 @@ public class Buckets<P extends IHasShortcut> {
          * @return the value associated with the shortcut key or null
          */
         public final Value getValueByShortcut(String shortcut) {
-            return valuesByName.get(shortcut);
+            if (null == shortcut) {
+                throw new IllegalArgumentException("shortcut cannot be null.");
+            }
+            Value result = valuesByName.get(shortcut);
+            if (null == result) {
+                result = new Value();
+            }
+            return result;
         }
 
         public boolean hasValue(Object key) {

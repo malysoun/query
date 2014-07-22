@@ -76,10 +76,6 @@ public class LinearInterpolator implements Interpolator {
             this.buckets = buckets;
         }
 
-        public Object getKey() {
-            return key;
-        }
-
         public void accumulate(Long timestamp, Buckets<IHasShortcut>.Bucket bucket) {
             if (!bucket.hasValue(key)) {
                 // no value - if we haven't seen any values yet, keep going.
