@@ -1,6 +1,4 @@
-package org.zenoss.app.metricservice.buckets;
-
-/*
+package org.zenoss.app.metricservice.buckets;/*
  * Copyright (c) 2014, Zenoss and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,6 +33,9 @@ import org.zenoss.app.metricservice.api.impl.IHasShortcut;
 
 import java.util.Collection;
 
-public interface Interpolator {
-    public void interpolate(Buckets<IHasShortcut> buckets, Collection<IHasShortcut> keys);
+public class NoOpInterpolator implements Interpolator {
+    @Override
+    public void interpolate(Buckets<IHasShortcut> buckets, Collection<IHasShortcut> keys) {
+        // intentional no-op.
+    }
 }

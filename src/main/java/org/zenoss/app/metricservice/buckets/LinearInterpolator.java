@@ -41,7 +41,7 @@ public class LinearInterpolator implements Interpolator {
     private List<SeriesInterpolatingAccumulator> accumulators = new ArrayList<>();
 
     @Override
-    public void interpolate(Buckets<IHasShortcut> buckets) {
+    public void interpolate(Buckets<IHasShortcut> buckets, Collection<IHasShortcut> keys) {
 
         /* Make two passes.
          *  First pass: gather the following information:
@@ -50,7 +50,7 @@ public class LinearInterpolator implements Interpolator {
          *
          *  Second pass: use data gathered in first pass to calculate and fill in missing values
          */
-        for (IHasShortcut key : buckets.getPrimaryKeys()) {
+        for (IHasShortcut key : keys) {
             accumulators.add(new SeriesInterpolatingAccumulator(buckets, key));
         }
 

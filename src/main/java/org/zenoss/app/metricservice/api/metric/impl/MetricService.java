@@ -66,7 +66,6 @@ public class MetricService implements MetricServiceAPI {
     public static final String NOT_SPECIFIED = "not-specified";
     private static final Logger log = LoggerFactory.getLogger(MetricService.class);
     public final ObjectMapper objectMapper;
-    public ResultProcessor resultsProcessor = new DefaultResultProcessor();
     public JacksonResultsWriter jacksonResultsWriter = new JacksonResultsWriter();
     @Autowired
     MetricServiceAppConfiguration config;
@@ -396,7 +395,8 @@ public class MetricService implements MetricServiceAPI {
             log.info("Using JacksonWriter to generate JSON results.");
             try (JacksonWriter writer = new JacksonWriter(new OutputStreamWriter(output, "UTF-8"))) {
                 log.debug("processing results");
-                Buckets<IHasShortcut> buckets = resultsProcessor.processResults(reader, queries, bucketSize);
+                ResultProcessor processor = new DefaultResultProcessor(reader, queries, bucketSize);
+                Buckets<IHasShortcut> buckets = processor.processResults();
                 log.debug("results processed.");
                 //log.info("calling jacksonResultsWriter. Buckets = {}", Utils.jsonStringFromObject(buckets));
                 jacksonResultsWriter.writeResults(writer, queries, buckets,

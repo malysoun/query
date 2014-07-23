@@ -33,13 +33,17 @@ package org.zenoss.app.metricservice.api.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zenoss.app.metricservice.api.metric.impl.MetricService;
+import org.zenoss.app.metricservice.api.model.InterpolatorType;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.buckets.Buckets;
 import org.zenoss.app.metricservice.buckets.Interpolator;
 import org.zenoss.app.metricservice.buckets.LinearInterpolator;
+import org.zenoss.app.metricservice.buckets.InterpolatorFactory;
 import org.zenoss.app.metricservice.buckets.Value;
 import org.zenoss.app.metricservice.calculators.*;
 
@@ -58,7 +62,17 @@ public class DefaultResultProcessor implements ResultProcessor,
     ReferenceProvider {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultResultProcessor.class);
-    private Interpolator interpolator;
+    private Multimap<InterpolatorType, IHasShortcut> interpolatorMap = ArrayListMultimap.create();
+    private BufferedReader reader;
+    private List<MetricSpecification> queries;
+    private long bucketSize;
+
+    public DefaultResultProcessor(BufferedReader reader, List<MetricSpecification> queries, long bucketSize) {
+        this.reader = reader;
+        this.queries = queries;
+        this.bucketSize = bucketSize;
+    }
+
 
     /*
      * (non-Javadoc)
@@ -98,8 +112,7 @@ public class DefaultResultProcessor implements ResultProcessor,
      * java.io.BufferedReader, java.util.List, long)
      */
     @Override
-    public Buckets<IHasShortcut> processResults(BufferedReader reader, List<MetricSpecification> queries, long bucketSize)
-        throws ClassNotFoundException, IOException {
+    public Buckets<IHasShortcut> processResults() throws IOException, ClassNotFoundException {
 
         Buckets<IHasShortcut> buckets = new Buckets<>(bucketSize);
 
@@ -113,8 +126,8 @@ public class DefaultResultProcessor implements ResultProcessor,
          * the same way
          */
         MetricKeyCache keyCache = new MetricKeyCache();
-        for (MetricSpecification spec : queries) {
-            addKeyToCacheAndSetUpCalculatorForExpression(calculatorMap, keyCache, spec);
+        for (MetricSpecification metricSpecification : queries) {
+            addKeyToCacheAndSetUpCalculatorForExpression(calculatorMap, keyCache, metricSpecification);
         }
 
         // Get a list of calculated values
@@ -149,10 +162,16 @@ public class DefaultResultProcessor implements ResultProcessor,
         return buckets;
     }
 
+
     private void interpolateValues(Buckets<IHasShortcut> buckets) {
-        Interpolator interpolator = getInterpolator();
-        if (null != interpolator) {
-            interpolator.interpolate(buckets);
+        for (InterpolatorType interpolatorType : interpolatorMap.keys()) {
+            log.debug("Interpolating for type: {}.", interpolatorType);
+            Collection<IHasShortcut> foo = interpolatorMap.get(interpolatorType);
+            for (IHasShortcut series : foo) {
+                log.debug("Series {} interpolated with {} interpolator.", series.getShortcut(), interpolatorType);
+            }
+            Interpolator interpolator = InterpolatorFactory.getInterpolator(interpolatorType);
+            interpolator.interpolate(buckets, interpolatorMap.get(interpolatorType));
         }
     }
 
@@ -205,6 +224,7 @@ public class DefaultResultProcessor implements ResultProcessor,
             calc.setReferenceProvider(this);
             calcs.put(key, calc);
         }
+        interpolatorMap.put(spec.getInterpolator(), key);
     }
 
     private void calculateValue(Buckets<MetricKey> buckets, Map<MetricKey, MetricCalculator> calculators,
@@ -248,18 +268,6 @@ public class DefaultResultProcessor implements ResultProcessor,
         reader = new BufferedReader(new StringReader(contents));
         log.debug("Reader Content: {}", contents);
         return reader;
-    }
-
-
-    public Interpolator getInterpolator() {
-        if (null == interpolator) {
-            interpolator = new LinearInterpolator();
-        }
-        return interpolator;
-    }
-
-    public void setInterpolator(Interpolator interpolator) {
-        this.interpolator = interpolator;
     }
 
     private static class BucketClosure implements Closure {

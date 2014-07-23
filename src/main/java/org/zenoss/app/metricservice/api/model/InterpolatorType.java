@@ -1,6 +1,4 @@
-package org.zenoss.app.metricservice.buckets;
-
-/*
+package org.zenoss.app.metricservice.api.model;/*
  * Copyright (c) 2014, Zenoss and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,10 +29,6 @@ package org.zenoss.app.metricservice.buckets;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import org.zenoss.app.metricservice.api.impl.IHasShortcut;
-
-import java.util.Collection;
-
-public interface Interpolator {
-    public void interpolate(Buckets<IHasShortcut> buckets, Collection<IHasShortcut> keys);
+public enum InterpolatorType {
+    none, linear;
 }

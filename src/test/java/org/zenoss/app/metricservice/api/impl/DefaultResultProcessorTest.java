@@ -32,6 +32,7 @@
 package org.zenoss.app.metricservice.api.impl;
 
 import org.junit.Test;
+import org.zenoss.app.metricservice.api.model.InterpolatorType;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.buckets.Buckets;
 import org.zenoss.app.metricservice.buckets.Value;
@@ -78,17 +79,17 @@ public class DefaultResultProcessorTest {
         myValue.add(1.0);
         when(closure.getValueByShortcut("name")).thenReturn(myValue);
 
-        DefaultResultProcessor victim = new DefaultResultProcessor();
+        DefaultResultProcessor victim = new DefaultResultProcessor(null, null, Buckets.DEFAULT_BUCKET_SIZE);
         double foundValue = victim.lookup("name", closure);
         assertEquals("lookup should return correct value for series.", myValue.getValue(), foundValue, EPSILON);
     }
 
     @Test
     public void testProcessResultsWithConstantSeries() throws Exception {
-        DefaultResultProcessor victim = new DefaultResultProcessor();
         BufferedReader reader = makeReader();  // creates data for test
         List<MetricSpecification> queries = makeQueries(); // creates queries for test
-        Buckets<IHasShortcut> results = victim.processResults(reader, queries, BUCKET_SIZE);
+        DefaultResultProcessor victim = new DefaultResultProcessor(reader, queries, BUCKET_SIZE);
+        Buckets<IHasShortcut> results = victim.processResults();
         assertNotNull("Result of processing query should not be null", results);
         assertEquals("Seconds per bucket should match specified bucket size.", BUCKET_SIZE, results.getSecondsPerBucket());
         for (Long timestamp : results.getTimestamps()) {
@@ -111,10 +112,10 @@ public class DefaultResultProcessorTest {
 
     @Test
     public void testProcessResultsWithYEqualsXSeries() throws Exception {
-        DefaultResultProcessor victim = new DefaultResultProcessor();
         BufferedReader reader = makeYEqualsXReader();  // creates data for test
         List<MetricSpecification> queries = makeQueries(); // creates queries for test
-        Buckets<IHasShortcut> results = victim.processResults(reader, queries, BUCKET_SIZE);
+        DefaultResultProcessor victim = new DefaultResultProcessor(reader, queries, BUCKET_SIZE);
+        Buckets<IHasShortcut> results = victim.processResults();
         assertNotNull("Result of processing query should not be null", results);
         assertEquals("Seconds per bucket should match specified bucket size.", BUCKET_SIZE, results.getSecondsPerBucket());
         for (Long timestamp : results.getTimestamps()) {
@@ -146,6 +147,8 @@ public class DefaultResultProcessorTest {
     private BufferedReader makeYEqualsXReader() {
         DataReaderGenerator generator = new DataReaderGenerator();
         SeriesGenerator dataGen = new YEqualsXSeriesGenerator();
+        MetricSpecification dailySpecification = MetricSpecification.fromString("dailyMetric");
+        dailySpecification.setInterpolator(InterpolatorType.linear);
         generator.addSeries(MetricSpecification.fromString("hourlyMetric"), dataGen, START_TIME, END_TIME, HOURLY_STEP);
         generator.addSeries(MetricSpecification.fromString("dailyMetric"), dataGen, START_TIME, END_TIME, DAILY_STEP);
         return generator.makeReader();
@@ -153,14 +156,18 @@ public class DefaultResultProcessorTest {
 
     private List<MetricSpecification> makeQueries() {
         List<MetricSpecification> result = new ArrayList<>();
-        String[] specifications = {"hourlyMetric", "dailyMetric"};
-        for (String specification : specifications) {
-            result.add(MetricSpecification.fromString(specification));
-        }
+        MetricSpecification hourlySpec = MetricSpecification.fromString("hourlyMetric");
+        result.add(hourlySpec);
+
+        MetricSpecification dailySpec = MetricSpecification.fromString("dailyMetric");
+        dailySpec.setInterpolator(InterpolatorType.linear);
+        result.add(dailySpec);
+
         MetricSpecification calculatedExpression = new MetricSpecification();
         calculatedExpression.setName(CALCULATED_VALUE_SERIES_NAME);
         calculatedExpression.setExpression("rpn:hourlyMetric,dailyMetric,+");
         result.add(calculatedExpression);
+
         return result;
     }
 }

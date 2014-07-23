@@ -66,6 +66,9 @@ public class MetricSpecification {
     private Aggregator aggregator = DEFAULT_AGGREGATOR;
 
     @JsonProperty
+    private InterpolatorType interpolator = InterpolatorType.none;
+
+    @JsonProperty
     private String downsample = null;
 
     @JsonProperty
@@ -79,7 +82,6 @@ public class MetricSpecification {
 
     @JsonProperty
     private Map<String, List<String>> tags = new HashMap<String, List<String>>();
-
 
     @JsonProperty
     private boolean emit = true;
@@ -155,6 +157,14 @@ public class MetricSpecification {
      */
     public final void setAggregator(Aggregator aggregator) {
         this.aggregator = aggregator;
+    }
+
+    public InterpolatorType getInterpolator() {
+        return interpolator;
+    }
+
+    public void setInterpolator(InterpolatorType interpolator) {
+        this.interpolator = interpolator;
     }
 
     /**
