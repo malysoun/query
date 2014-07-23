@@ -31,7 +31,10 @@ package org.zenoss.app.metricservice.buckets;/*
 
 import org.zenoss.app.metricservice.api.model.InterpolatorType;
 
-public class InterpolatorFactory {
+public final class InterpolatorFactory {
+    private InterpolatorFactory() {
+    }
+
     public static Interpolator getInterpolator(InterpolatorType type) {
         if (type == InterpolatorType.linear) {
             return new LinearInterpolator();

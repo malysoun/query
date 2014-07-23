@@ -59,7 +59,7 @@ public class Buckets<P extends IHasShortcut> {
     /**
      * Set of buckets indexed by time in seconds
      */
-    private Map<Long, Buckets<P>.Bucket> bucketList = new TreeMap<>();
+    private final Map<Long, Buckets<P>.Bucket> bucketList = new TreeMap<>();
 
     /**
      * Specifies the size of each bucket in seconds
@@ -87,7 +87,7 @@ public class Buckets<P extends IHasShortcut> {
          * Map from the primary key to the values within a bucket
          */
         @JsonProperty("values")
-        private Map<P, Value> values = new HashMap<>();
+        private final Map<P, Value> values = new HashMap<>();
 
         /**
          * Map from the shortcut key to the values within a bucket
@@ -310,7 +310,7 @@ public class Buckets<P extends IHasShortcut> {
     }
 
     private class OccurrenceCounter<K> {
-        private Map<K, Long> occurrenceMap = new HashMap<>();
+        private final Map<K, Long> occurrenceMap = new HashMap<>();
 
         public void logOccurrence(K key, long timestamp) {
             increment(key);

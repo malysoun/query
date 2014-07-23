@@ -171,7 +171,7 @@ public class MetricService implements MetricServiceAPI {
         /**
          * @param in
          */
-        public LastFilter(Reader in, long startTs, long endTs) {
+        private LastFilter(Reader in, long startTs, long endTs) {
             super(in);
             this.startTs = startTs;
             this.endTs = endTs;
@@ -240,11 +240,11 @@ public class MetricService implements MetricServiceAPI {
         private long start = -1;
         private long end = -1;
 
-        public MetricServiceWorker(String id,
-                                   String startTime, String endTime, ReturnSet returnset,
-                                   Boolean outputAsSeries, String downsample, double downsampleMultiplier,
-                                   Map<String, List<String>> tags,
-                                   List<MetricSpecification> queries) {
+        private MetricServiceWorker(String id,
+                                    String startTime, String endTime, ReturnSet returnset,
+                                    Boolean outputAsSeries, String downsample, double downsampleMultiplier,
+                                    Map<String, List<String>> tags,
+                                    List<MetricSpecification> queries) {
             if (queries == null) {
                 // This really should never happen as the query check should
                 // happen in our calling routine, but just in case.

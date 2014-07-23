@@ -42,14 +42,12 @@ import org.zenoss.app.metricservice.api.model.InterpolatorType;
 import org.zenoss.app.metricservice.api.model.MetricSpecification;
 import org.zenoss.app.metricservice.buckets.Buckets;
 import org.zenoss.app.metricservice.buckets.Interpolator;
-import org.zenoss.app.metricservice.buckets.LinearInterpolator;
 import org.zenoss.app.metricservice.buckets.InterpolatorFactory;
 import org.zenoss.app.metricservice.buckets.Value;
 import org.zenoss.app.metricservice.calculators.*;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.*;
 
 /**
@@ -62,10 +60,13 @@ public class DefaultResultProcessor implements ResultProcessor,
     ReferenceProvider {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultResultProcessor.class);
-    private Multimap<InterpolatorType, IHasShortcut> interpolatorMap = ArrayListMultimap.create();
-    private BufferedReader reader;
-    private List<MetricSpecification> queries;
-    private long bucketSize;
+    private final Multimap<InterpolatorType, IHasShortcut> interpolatorMap = ArrayListMultimap.create();
+    private final BufferedReader reader;
+    private final List<MetricSpecification> queries;
+    private final long bucketSize;
+    private Map<MetricKey, MetricCalculator> calculatorMap;
+    private MetricKeyCache keyCache;
+    private Buckets<IHasShortcut> buckets;
 
     public DefaultResultProcessor(BufferedReader reader, List<MetricSpecification> queries, long bucketSize) {
         this.reader = reader;
@@ -113,21 +114,10 @@ public class DefaultResultProcessor implements ResultProcessor,
      */
     @Override
     public Buckets<IHasShortcut> processResults() throws IOException, ClassNotFoundException {
+        initialize();
 
-        Buckets<IHasShortcut> buckets = new Buckets<>(bucketSize);
-
-        Map<MetricKey, MetricCalculator> calculatorMap = new HashMap<>();
-
-        // Walk the queries and build up a map of metric name to RPN
-        // expressions
-
-        /*
-         * key is name + tags ... It has to be repeatable, each time generated
-         * the same way
-         */
-        MetricKeyCache keyCache = new MetricKeyCache();
         for (MetricSpecification metricSpecification : queries) {
-            addKeyToCacheAndSetUpCalculatorForExpression(calculatorMap, keyCache, metricSpecification);
+            preProcessQuerySpecifications(metricSpecification);
         }
 
         // Get a list of calculated values
@@ -162,6 +152,9 @@ public class DefaultResultProcessor implements ResultProcessor,
         return buckets;
     }
 
+    private void addKeyToCache(MetricSpecification metricSpecification) {
+    }
+
 
     private void interpolateValues(Buckets<IHasShortcut> buckets) {
         for (InterpolatorType interpolatorType : interpolatorMap.keys()) {
@@ -175,15 +168,18 @@ public class DefaultResultProcessor implements ResultProcessor,
         }
     }
 
+    private void initialize() {
+        buckets = new Buckets<>(bucketSize);
+        calculatorMap = new HashMap<>();
+        keyCache = new MetricKeyCache();
+    }
+
+
     private void calculateValues(List<MetricSpecification> calculatedValues, Buckets<IHasShortcut> buckets) throws ClassNotFoundException {
         for (MetricSpecification metricSpecification : calculatedValues) {
-
-            Map<MetricKey, MetricCalculator> calculators  = new HashMap<>();
-            MetricKeyCache keyCache = new MetricKeyCache();
-            addKeyToCacheAndSetUpCalculatorForExpression(calculators, keyCache, metricSpecification);
             Tags tags = Tags.fromValue(metricSpecification.getTags());
             MetricKey key = keyCache.get(metricSpecification.getName(), tags);
-            MetricCalculator calculator = calculators.get(key);
+            MetricCalculator calculator = calculatorMap.get(key);
             if (null != calculator) {
                 for (Long timestamp : buckets.getTimestamps()) {
                     Buckets<IHasShortcut>.Bucket bucket =  buckets.getBucket(timestamp);
@@ -211,70 +207,22 @@ public class DefaultResultProcessor implements ResultProcessor,
         }
     }
 
-    private void addKeyToCacheAndSetUpCalculatorForExpression(Map<MetricKey, MetricCalculator> calcs, MetricKeyCache keyCache,
-                                                              MetricSpecification spec) throws ClassNotFoundException {
-        if (null == calcs) {
-            log.warn("null collection passed in. no results will be returned.");
-        }
-
+    private void preProcessQuerySpecifications(MetricSpecification spec) throws ClassNotFoundException {
         MetricKey key = keyCache.put(MetricKey.fromValue(spec));
         String expr = Strings.nullToEmpty(spec.getExpression()).trim();
         if (!expr.isEmpty()) {
             MetricCalculator calc = MetricCalculatorFactory.newInstance(expr);
             calc.setReferenceProvider(this);
-            calcs.put(key, calc);
+            calculatorMap.put(key, calc);
         }
         interpolatorMap.put(spec.getInterpolator(), key);
-    }
-
-    private void calculateValue(Buckets<MetricKey> buckets, Map<MetricKey, MetricCalculator> calculators,
-                                MetricKeyCache keyCache, BucketClosure closure, Tags tags,
-                                Buckets<IHasShortcut>.Bucket bucket, long timeStamp,
-                                MetricSpecification metricSpecification) {
-        MetricKey key = keyCache.get(metricSpecification.getName(), tags);
-
-        MetricCalculator calculator = calculators.get(key);
-        if (null != calculator) {
-            closure.ts = timeStamp;
-            closure.bucket = bucket;
-            double val = 0l;
-            try {
-                val = calculator.evaluate(closure);
-            } catch (UnknownReferenceException e) {
-                log.debug("UnknownReferenceException swallowed for calculation at timestamp {}: {}", timeStamp, e);
-                /*
-                 * Just because a reference was not in the same bucket does not
-                 * mean a real failure. It is legitimate.
-                 */
-            }
-
-            buckets.add(key, timeStamp, val);
-        }
-    }
-
-    private static BufferedReader logDebugInformation(BufferedReader reader) throws IOException {
-        StringBuffer readerPeekBuffer = new StringBuffer(4096);
-        long lineCount = 0l;
-        String line;
-        while (null != (line = reader.readLine())) {
-            lineCount++;
-            readerPeekBuffer.append(line);
-            readerPeekBuffer.append('\n');
-        }
-
-        log.debug("LINES READ FROM OPENTSDB: {}", lineCount);
-
-        String contents = readerPeekBuffer.toString();
-        reader = new BufferedReader(new StringReader(contents));
-        log.debug("Reader Content: {}", contents);
-        return reader;
     }
 
     private static class BucketClosure implements Closure {
         private long ts;
         public Buckets<IHasShortcut>.Bucket bucket;
 
-        public BucketClosure() {
+        private BucketClosure() {
 
         }
 

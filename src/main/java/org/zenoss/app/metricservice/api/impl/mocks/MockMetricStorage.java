@@ -176,6 +176,7 @@ public class MockMetricStorage implements MetricStorageAPI {
      * .query.QueryAppConfiguration, java.lang.String, java.lang.String,
      * java.lang.String, java.lang.Boolean, java.lang.Boolean, java.util.List)
      */
+    @Override
     public BufferedReader getReader(MetricServiceAppConfiguration config,
             String id, String startTime, String endTime, ReturnSet returnset,
             Boolean series, String downsample, double downsampleMultiplier, Map<String, List<String>> tags,

@@ -38,7 +38,7 @@ import java.util.*;
 
 public class LinearInterpolator implements Interpolator {
     private static final Logger log = LoggerFactory.getLogger(LinearInterpolator.class);
-    private List<SeriesInterpolatingAccumulator> accumulators = new ArrayList<>();
+    private final List<SeriesInterpolatingAccumulator> accumulators = new ArrayList<>();
 
     @Override
     public void interpolate(Buckets<IHasShortcut> buckets, Collection<IHasShortcut> keys) {
@@ -69,9 +69,9 @@ public class LinearInterpolator implements Interpolator {
         private final Buckets<IHasShortcut> buckets;
         private Long timestampForLastBucketWithValue = null;
         private Buckets<IHasShortcut>.Bucket lastBucketWithValue = null;
-        private List<Long> timestampsNeedingInterpolation = new ArrayList<>();
+        private final List<Long> timestampsNeedingInterpolation = new ArrayList<>();
 
-        public SeriesInterpolatingAccumulator(Buckets<IHasShortcut> buckets, IHasShortcut key) {
+        private SeriesInterpolatingAccumulator(Buckets<IHasShortcut> buckets, IHasShortcut key) {
             this.key = key;
             this.buckets = buckets;
         }
